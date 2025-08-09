@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Калькулятор пребывания — по центру</title>
+    <style>
+        /* ========== ПЕРЕМЕННЫЕ ========== */
+        :root{
+            --accent: #007bff;
+            --accent-dark: #0056b3;
+            --card-bg: rgba(255,255,255,0.92);
+            --muted: #666;
+            --result-bg: #47bfea;
+            --yellow: #ffc107;
+        }
+
+        /* ========== БАЗОВЫЕ СБРОСЫ ========== */
+        *{box-sizing:border-box;margin:0;padding:0}
+        html,body{height:100%}
+        body{
+            font-family: Inter, Arial, sans-serif;
+            background-image: url('images/background.png');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed; /* на десктопе */
+            color:#222;
+            -webkit-font-smoothing:antialiased;
+
+            /* Центрируем контейнер вертикально и горизонтально */
+            display:flex;
+            align-items:center;     /* вертикально */
+            justify-content:center; /* горизонтально */
+            padding:24px;
+        }
+
+        /* затемняющий слой — чтобы текст читался на фоне */
+        body::before{
+            content:"";
+            position:fixed;
+            inset:0;
+            background: linear-gradient(rgba(0,0,0,0.13), rgba(0,0,0,0.02));
+            pointer-events:none;
+            z-index:0;
+        }
+
+        /* ========== ОКНО (карточка) ========== */
+        .container{
+            width: 600px;
+            max-width: 100%;
+            background: var(--card-bg);
+            border-radius: 14px;
+            padding: 22px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+            border: 3px solid var(--accent);
+            z-index: 1;
+            position: relative;
+
+            /* Центрируем содержимое карточки */
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            text-align:center;
+            gap:12px;
+        }
+
+        .header {
+            display:flex;
+            align-items:center;
+            gap:12px;
+            justify-content:center; /* центр заголовка */
+        }
+        .logo img{ width:70px; height:auto; display:block; }
+        h1{ font-size:18px; color:#141515; margin-bottom:0; }
+        h2{ font-size:14px; color:var(--muted); font-weight:300; margin-top:0; }
+
+        /* Блоки внутри карточки */
+        .section{ width:100%; max-width:760px; display:flex; flex-direction:column; align-items:center; gap:8px; }
+        label{ display:block; font-size:13px; color: #333; margin-bottom:6px; text-align:center; width:100%;}
+        input[type="date"]{
+            padding:10px 12px;
+            border-radius:6px;
+            border:1px solid #ccc;
+            font-size:14px;
+            background:white;
+        }
+        button{
+            padding:10px 14px;
+            border-radius:8px;
+            border:none;
+            cursor:pointer;
+            font-weight:600;
+        }
+        .add-button{
+            background:var(--accent);
+            color:white;
+        }
+        .add-button:hover{ background:var(--accent-dark) }
+
+        /* Список строк (центрируем строки) */
+        #date-container{
+            display:flex;
+            flex-direction:column;
+            gap:10px;
+            align-items:center; /* строки по центру */
+            width:100%;
+        }
+
+        .date-row{
+            display:flex;
+            gap:10px;
+            align-items:center;
+            justify-content:center; /* ЭТО — ключ: все внутри строки по центру */
+            flex-wrap:wrap;
+            padding:8px 12px;
+            border-radius:8px;
+            background: rgba(0,0,0,0.02);
+            border: 1px solid rgba(0,0,0,0.04);
+            width:100%;
+            max-width:720px;
+        }
+        .date-row input[type="date"]{ min-width:150px; }
+        .result-box{
+            min-width:110px;
+            padding:8px 12px;
+            border-radius:6px;
+            background: var(--result-bg);
+            border:1px solid rgba(144, 202, 249, 0.8);
+            font-weight:700;
+            text-align:center;
+        }
+        .remove{
+            background:#dc3545;
+            color:white;
+            width:40px;
+            height:40px;
+            border-radius:6px;
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            font-size:18px;
+        }
+
+        /* Кнопки под списком (центруем) */
+        .controls{
+            display:flex;
+            gap:10px;
+            justify-content:center;
+            align-items:center;
+            width:100%;
+            max-width:760px;
+            margin-top:6px;
+        }
+
+        .total-days{
+            margin-top:6px;
+            font-size:16px;
+            display:flex;
+            align-items:center;
+            gap:12px;
+            justify-content:center; /* центр */
+            width:100%;
+        }
+        .total-days span{
+            background:var(--yellow);
+            padding:8px 14px;
+            border-radius:8px;
+            font-weight:700;
+            color:#111;
+        }
+
+        /* Текущее время — внутри карточки и по центру */
+        .current-time{
+            margin-top:6px;
+            font-size:22px;
+            color:red;
+            background:white;
+            padding:8px 12px;
+            border-radius:10px;
+            border:3px solid gold;
+            text-align:center;
+            box-shadow:0 6px 18px rgba(0,0,0,0.12);
+            width:320px;
+            max-width:100%;
+        }
+
+        /* Мобильная адаптация */
+        @media (max-width: 768px){
+            body{ background-attachment: scroll; padding:12px; }
+            .container{
+                width:100%;
+                padding:16px;
+                border-radius:12px;
+                border:2px solid var(--accent);
+                background: rgba(255,255,255,0.94);
+                box-shadow: 0 10px 35px rgba(0,0,0,0.28);
+            }
+            h1{ font-size:16px }
+            h2{ font-size:14px }
+            .date-row input[type="date"]{ min-width:120px; flex:1 1 120px; }
+            .remove{ width:36px; height:36px; font-size:16px }
+            .current-time{ font-size:18px; padding:8px; border-width:3px; width:260px; }
+        }
+
+        /* Фокус */
+        input[type="date"]:focus{
+            outline: 3px solid rgba(0,123,255,0.15);
+        }
+    </style>
+</head>
+<body>
+    <div class="container" role="main" aria-label="Калькулятор пребывания">
+        <div class="header">
+            <div class="logo"><img src="images/logo.png" alt="Логотип" /></div>
+            <div>
+                <h1>Департамент Пограничной Службы КНБ РК по ЗКО</h1>
+                <h2>Учебный центр "Орал"</h2>
+            </div>
+        </div>
+
+        <!-- Расчёт 180 дней назад -->
+        <div class="section" aria-labelledby="lbl-180">
+            <h3 id="lbl-180">Расчёт даты 180 дней назад</h3>
+            <label for="base-date">Укажите дату:</label>
+            <input id="base-date" type="date" aria-label="Дата для расчёта 180 дней назад" />
+            <div style="margin-top:8px;">
+                <span id="date-result" class="result-box" aria-live="polite">Результат: -</span>
+            </div>
+        </div>
+
+        <!-- Калькулятор въездов/выездов -->
+        <div class="section" aria-labelledby="lbl-calc">
+            <h3 id="lbl-calc">Калькулятор въездов и выездов</h3>
+
+            <div id="date-container" aria-live="polite">
+                <!-- начальная строка -->
+                <div class="date-row">
+                    <input type="date" class="entry-date" aria-label="Дата въезда" />
+                    <input type="date" class="exit-date" aria-label="Дата выезда" />
+                    <div class="result-box">0 дней</div>
+                    <button class="remove" type="button" onclick="removeRow(this)" title="Удалить" aria-label="Удалить">−</button>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button id="add-date" class="add-button" type="button" aria-label="Добавить въезд/выезд">Добавить въезд/выезд</button>
+                <button id="clear-all" type="button" style="background:#6c757d;color:#fff;border-radius:8px;padding:10px 14px;" aria-label="Очистить все">Очистить все</button>
+            </div>
+
+            <div class="total-days" style="margin-top:12px;">
+                Общее количество дней:
+                <span id="total-days">0</span>
+            </div>
+        </div>
+
+    <script>
+        // Элементы
+        const baseDateInput = document.getElementById('base-date');
+        const dateResult = document.getElementById('date-result');
+        const dateContainer = document.getElementById('date-container');
+        const totalDaysEl = document.getElementById('total-days');
+        const currentTimeEl = document.getElementById('current-time');
+
+        // Функция: дни между датами (без проблем с часовыми поясами)
+        function daysBetweenDates(entryVal, exitVal){
+            if (!entryVal || !exitVal) return 0;
+            const [ey, em, ed] = entryVal.split('-').map(Number);
+            const [xy, xm, xd] = exitVal.split('-').map(Number);
+
+            const entryUTC = Date.UTC(ey, em - 1, ed);
+            const exitUTC  = Date.UTC(xy, xm - 1, xd);
+
+            const msPerDay = 24 * 60 * 60 * 1000;
+            const diffDays = Math.floor((exitUTC - entryUTC) / msPerDay);
+
+            // По умолчанию считаем "исключительно" (между датами).
+            // Для включительного подсчёта (включая оба дня) используйте diffDays + 1
+            return Math.max(0, diffDays);
+        }
+
+        // Обработчик изменения в строках
+        dateContainer.addEventListener('input', (ev) => {
+            const target = ev.target;
+            if (target.classList.contains('entry-date') || target.classList.contains('exit-date')) {
+                const row = target.closest('.date-row');
+                const entryVal = row.querySelector('.entry-date').value;
+                const exitVal  = row.querySelector('.exit-date').value;
+                const days = daysBetweenDates(entryVal, exitVal);
+                row.querySelector('.result-box').textContent = (days > 0 ? `${days} дней` : '0 дней');
+                calculateTotalDays();
+            }
+        });
+
+        // Добавить строку
+        document.getElementById('add-date').addEventListener('click', () => {
+            const newRow = document.createElement('div');
+            newRow.className = 'date-row';
+            newRow.innerHTML = `
+                <input type="date" class="entry-date" aria-label="Дата въезда" />
+                <input type="date" class="exit-date" aria-label="Дата выезда" />
+                <div class="result-box">0 дней</div>
+                <button class="remove" type="button" onclick="removeRow(this)" title="Удалить" aria-label="Удалить">−</button>
+            `;
+            dateContainer.appendChild(newRow);
+            newRow.scrollIntoView({behavior:'smooth', block:'center'});
+        });
+
+        // Удалить строку
+        function removeRow(btn){
+            const row = btn.closest('.date-row');
+            if (!row) return;
+            dateContainer.removeChild(row);
+            calculateTotalDays();
+        }
+
+        // Очистить все (оставить одну пустую строку)
+        document.getElementById('clear-all').addEventListener('click', () => {
+            dateContainer.innerHTML = '';
+            const first = document.createElement('div');
+            first.className = 'date-row';
+            first.innerHTML = `
+                <input type="date" class="entry-date" aria-label="Дата въезда" />
+                <input type="date" class="exit-date" aria-label="Дата выезда" />
+                <div class="result-box">0 дней</div>
+                <button class="remove" type="button" onclick="removeRow(this)" title="Удалить" aria-label="Удалить">−</button>
+            `;
+            dateContainer.appendChild(first);
+            calculateTotalDays();
+        });
+
+        // Подсчёт общего числа дней
+        function calculateTotalDays(){
+            let total = 0;
+            document.querySelectorAll('.date-row').forEach(row => {
+                const text = row.querySelector('.result-box').textContent || '0';
+                const val = parseInt(text.split(' ')[0], 10) || 0;
+                total += val;
+            });
+            totalDaysEl.textContent = total;
+        }
+
+        // Расчёт 180 дней назад (по введённой дате)
+        baseDateInput.addEventListener('input', () => {
+            const v = baseDateInput.value; // 'YYYY-MM-DD'
+            if (!v) {
+                dateResult.textContent = 'Результат: -';
+                return;
+            }
+            const [y,m,d] = v.split('-').map(Number);
+            const baseUTC = Date.UTC(y, m-1, d);
+            const msPerDay = 24 * 60 * 60 * 1000;
+            const pastUTC = new Date(baseUTC - 180 * msPerDay); // 180 дней назад
+            dateResult.textContent = `Результат: ${pastUTC.toLocaleDateString('ru-RU')}`;
+        });
+
+        // Инициализация
+        calculateTotalDays();
+    </script>
+</body>
+</html>
